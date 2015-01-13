@@ -19,7 +19,7 @@ Install from pypi (recommended)::
 
 To install from github::
 
-    $ pip install git+git://github.com/robinedwards/neomodel.git@HEAD#egg=neomodel-dev
+    $ pip install git+git://github.com/Devicehubnet/devicehub_py.git
 
 Contributing
 ============
