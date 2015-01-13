@@ -2,7 +2,7 @@ __author__ = 'Ionut Cotoi'
 from urllib import urlencode
 import json
 
-from lib.devicehub.objects import Endpoint, POST_URLENCODED, ENDPOINT_ERR
+from devicehub.objects import Endpoint, POST_URLENCODED, ENDPOINT_ERR
 
 
 

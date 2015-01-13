@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 __author__ = 'Ionut Cotoi'
-from lib.devicehub.http_api import Sensor, Actuator
+import random
+from time import sleep
+
+from devicehub.http_api import Sensor, Actuator
+
 
 dh_settings = {
     'project_id': 370,
@@ -12,3 +16,12 @@ humidity = Sensor(dh_settings, sensor_id=783)
 
 led = Actuator(dh_settings, actuator_id=203)
 servo = Actuator(dh_settings, actuator_id=204)
+
+
+
+for i in range(10):
+    temperature.set(round(random.random()*100, 3))
+    humidity.set(round(random.random()*100, 3))
+    sleep(1)
+
+
