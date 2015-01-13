@@ -18,7 +18,7 @@ Installation
 
 Install from pypi (recommended)::
 
-    TODO
+    $ pip install devicehub
 
 To install from github::
 
