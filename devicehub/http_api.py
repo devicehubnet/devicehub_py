@@ -1,7 +1,9 @@
 __author__ = 'Ionut Cotoi'
-from objects import Endpoint, POST_URLENCODED, ENDPOINT_ERR
 from urllib import urlencode
 import json
+
+from lib.devicehub.objects import Endpoint, POST_URLENCODED, ENDPOINT_ERR
+
 
 
 # HTTP JSON API test classes

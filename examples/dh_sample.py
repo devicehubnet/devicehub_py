@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 __author__ = 'Ionut Cotoi'
-from devicehub.http_api import Sensor, Actuator
-
-
+from lib.devicehub.http_api import Sensor, Actuator
 
 dh_settings = {
     'project_id': 370,

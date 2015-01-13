@@ -10,6 +10,8 @@ Requirements
 
 - Python 2.7, 3.4, pypy and pypy3
 - httplib2:  pip install httplib2
+- paho-mqtt:  pip install paho-mqtt (only for the mqtt sample)
+
 
 Installation
 ============
