@@ -6,11 +6,14 @@ import json
 
 # HTTP JSON API test classes
 class Sensor(Endpoint):
-    def __init__(self, settings, project_id, sensor_id):
+    def __init__(self, settings, sensor_id, project_id=None):
         """
 
 
         """
+        if project_id is None:
+            project_id = settings['project_id']
+
         super(Sensor, self).__init__(settings, project_id, sensor_id)
         self.api_endpoint = self.api_endpoint_root
         self.api_endpoint += "/project/" + str(self.project_id) + "/sensor/" + str(self.endpoint_id) + "/"
@@ -75,12 +78,15 @@ class Sensor(Endpoint):
 
 
 class Actuator(Endpoint):
-    def __init__(self, settings, project_id, sensor_id):
+    def __init__(self, settings, actuator_id, project_id=None):
         """
 
 
         """
-        super(Actuator, self).__init__(settings, project_id, sensor_id)
+        if project_id is None:
+            project_id = settings['project_id']
+
+        super(Actuator, self).__init__(settings, project_id, actuator_id)
         self.api_endpoint = self.api_endpoint_root
         self.api_endpoint += "/project/" + str(self.project_id) + "/actuator/" + str(self.endpoint_id) + "/"
 

@@ -27,8 +27,9 @@ class Endpoint(object):
         self.settings = settings
         self.api = API
 
-        for key in settings['api'].keys():
-            self.api[key] = settings['api'][key]
+        if 'api' in settings:
+            for key in settings['api'].keys():
+                self.api[key] = settings['api'][key]
 
         self.api_endpoint_root = self.api['api_protocol'] + "://" + self.api['api_host'] + self.api['api_root']
         self.api_key = self.settings['api_key']

@@ -9,7 +9,7 @@ Requirements
 ============
 
 - Python 2.7, 3.4, pypy and pypy3
-- httplib2:: pip install httplib2
+- httplib2:  pip install httplib2
 
 Installation
 ============
