@@ -6,5 +6,4 @@ setup(name='devicehub',
       version='0.1dev',
       package_dir={'devicehub': 'devicehub'},
       packages=['devicehub'],
-      long_description=open('README.rst').read(),
       )
