@@ -1,17 +1,17 @@
-__author__ = 'cotty'
-from objects import Endpoint, POST_URLENCODED, POST_JSON, ENDPOINT_ERR
+__author__ = 'Ionut Cotoi'
+from objects import Endpoint, POST_URLENCODED, ENDPOINT_ERR
 from urllib import urlencode
 import json
 
 
 # HTTP JSON API test classes
-class SensorJSON(Endpoint):
+class Sensor(Endpoint):
     def __init__(self, settings, project_id, sensor_id):
         """
 
 
         """
-        super(SensorJSON, self).__init__(settings, project_id, sensor_id)
+        super(Sensor, self).__init__(settings, project_id, sensor_id)
         self.api_endpoint = self.api_endpoint_root
         self.api_endpoint += "/project/" + str(self.project_id) + "/sensor/" + str(self.endpoint_id) + "/"
 
@@ -74,13 +74,13 @@ class SensorJSON(Endpoint):
             return ENDPOINT_ERR
 
 
-class ActuatorJSON(Endpoint):
+class Actuator(Endpoint):
     def __init__(self, settings, project_id, sensor_id):
         """
 
 
         """
-        super(ActuatorJSON, self).__init__(settings, project_id, sensor_id)
+        super(Actuator, self).__init__(settings, project_id, sensor_id)
         self.api_endpoint = self.api_endpoint_root
         self.api_endpoint += "/project/" + str(self.project_id) + "/actuator/" + str(self.endpoint_id) + "/"
 
