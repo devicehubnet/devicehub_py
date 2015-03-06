@@ -29,3 +29,8 @@ Contributing
 
 Ideas, bugs, tests and pull requests always welcome.
 
+
+Release new version to pypi
+===========================
+python setup.py sdist upload
+
