@@ -18,7 +18,6 @@ led = Actuator(dh_settings, actuator_id=203)
 servo = Actuator(dh_settings, actuator_id=204)
 
 
-
 for i in range(10):
     temperature.set(round(random.random()*100, 3))
     humidity.set(round(random.random()*100, 3))
