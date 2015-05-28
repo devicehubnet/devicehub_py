@@ -35,7 +35,7 @@ class Device(object):
         self.client.on_message = self.on_message
         self.client.on_disconnect = self.on_disconnect
 
-        self.client.connect("io.dev.devicehub.net", 1883, 60)
+        self.client.connect("mqtt.devicehub.net", 1883, 60)
         self.client.loop_start()
 
         self.mqtt_connected = False
@@ -95,7 +95,7 @@ class Device(object):
 
         :return:
         """
-        return '/a/' + self.api_key + '/p/' + str(self.project.project_id) + '/device/' + self.device_uuid + '/'
+        return '/a/' + self.api_key + '/p/' + str(self.project.project_id) + '/d/' + self.device_uuid + '/'
 
     def addSensor(self, sensor):
         """
@@ -115,7 +115,7 @@ class Device(object):
         """
         self.actuators[actuator.name] = {
             'actuator': actuator,
-            'topic':    self.getTopicRoot() + 'actuator/' + actuator.name
+            'topic':    self.getTopicRoot() + 'actuator/' + actuator.name + '/state'
         }
 
         while self.mqtt_connected == False:
