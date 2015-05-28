@@ -35,7 +35,7 @@ class Device(object):
         self.client.on_message = self.on_message
         self.client.on_disconnect = self.on_disconnect
 
-        self.client.connect("mqtt-beta.devicehub.net", 1883, 60)
+        self.client.connect("mqtt.devicehub.net", 1883, 60)
         self.client.loop_start()
 
         self.mqtt_connected = False
