@@ -104,7 +104,7 @@ class Device(object):
         """
         self.sensors[sensor.name] = {
             'sensor': sensor,
-            'topic':  self.getTopicRoot() + 'sensor/' + sensor.name
+            'topic':  self.getTopicRoot() + 'sensor/' + sensor.name + '/data'
         }
 
     def addActuator(self, actuator, callback=None):
