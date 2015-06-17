@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-__author__ = 'Ionut Cotoi'
 import random
 from time import sleep
 

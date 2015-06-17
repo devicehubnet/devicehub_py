@@ -1,46 +1,45 @@
-__author__ = 'Ionut Cotoi'
-import paho.mqtt.client as mqtt
-import random
+#!/usr/bin/env python
+from devicehub.devicehub import Sensor, Actuator, Device, Project
+from random import randint, choice
 from time import sleep
-from devicehub.mqtt_api import Device, Sensor, Actuator
 
 
-dh_settings = {
-    'api_host': 'api.dev.devicehub.net',
-    'mqtt_host': 'mqtt.dev.devicehub.net',
-    'project_id': 44,
-    'device_id': 71,
-    'api_key': '71f3dc5c-3f05-47bd-836b-cb0b85d11545',
-}
+PROJECT_ID = '1234'
+DEVICE_UUID = '1234567-daa7-4c25-89e2-fa32164d5c16'
+API_KEY = '1234567-5131-407f-b76f-5158fa1234567'
 
 
-# The callback for when the client receives a CONNACK response from the server.
-def on_connect(client, userdata, rc):
-    print("Connected with result code "+str(rc))
-    # Subscribing in on_connect() means that if we lose the connection and
-    # reconnect then subscriptions will be renewed.
-    client.subscribe("$SYS/#")
+def on_led(client, userdata, message):
+    print message.payload
 
 
-# The callback for when a PUBLISH message is received from the server.
-def on_message(client, userdata, msg):
-    print(msg.topic+" "+str(msg.payload))
+def on_servo(client, userdata, message):
+    print message.payload
 
 
-client = mqtt.Client()
-client.on_connect = on_connect
-client.on_message = on_message
+project = Project(PROJECT_ID)
 
-client.connect("iot.eclipse.org", 1883, 60)
+device = Device(project, DEVICE_UUID, API_KEY)
 
-# Blocking call that processes network traffic, dispatches callbacks and
-# handles reconnecting.
-# Other loop*() functions are available that give a threaded interface and a
-# manual interface.
-client.loop_forever()
+temperature = Sensor(Sensor.ANALOG, 'Temperature')
+humidity = Sensor(Sensor.ANALOG, 'Humidity')
 
-for i in range(10):
-    temperature.set(round(random.random()*100, 3))
-    humidity.set(round(random.random()*100, 3))
+led = Actuator(Actuator.DIGITAL, 'LED')
+servo = Actuator(Actuator.ANALOG, 'SERVO')
+
+device.addSensor(temperature)
+device.addSensor(humidity)
+
+device.addActuator(led, on_led)
+device.addActuator(servo, on_servo)
+
+
+while True:
+    temperature.addValue(randint(1, 100))
+    humidity.addValue(randint(1, 100))
+    device.send()
     sleep(1)
+
+
+
 
