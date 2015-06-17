@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-__author__ = 'Ionut Cotoi'
 import serial
 from devicehub.http_api import Sensor, Actuator
 
