@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from devicehub.devicehub import Sensor, Actuator, Device, Project
-from random import randint, choice
+from random import randint
 from time import sleep
 
 
