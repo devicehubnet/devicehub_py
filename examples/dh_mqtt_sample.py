@@ -17,7 +17,7 @@ def on_servo(client, userdata, message):
     print message.payload
 
 
-project = Project(PROJECT_ID)
+project = Project(PROJECT_ID, persistent=True)
 
 device = Device(project, DEVICE_UUID, API_KEY)
 
