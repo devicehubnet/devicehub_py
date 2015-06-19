@@ -100,6 +100,7 @@ class Device(object):
         self.client.loop_start()
 
         self.mqtt_connected = False
+        self.initial_connect = False
 
     # The callback for when the client receives a CONNACK response from the server.
     def on_connect(self, client, userdata, flags, rc):
@@ -112,12 +113,14 @@ class Device(object):
         """
         print("Connected with result code "+str(rc))
         self.mqtt_connected = True
+        self.bulkSend()
 
-        # TODO uncomment following in order to re-subribe to actuator topics on disconnect
         # Subscribing in on_connect() means that if we lose the connection and
         # reconnect then subscriptions will be renewed.
-        # for k, sen in self.actuators.items():
-        #     self.client.subscribe(sen['topic'])
+        if not self.initial_connect:
+            for k, sen in self.actuators.items():
+                self.client.subscribe(sen['topic'])
+        self.initial_connect = True
 
     def on_subscribe(self, client, userdata, mid, granted_qos):
         """
@@ -194,44 +197,50 @@ class Device(object):
 
 
         """
-        for k, sen in self.sensors.items():
-            if len(sen['sensor'].values):
-                for idx, sensor_value in enumerate(sen['sensor'].values):
-                    value = sensor_value['value']
-                    data = {
-                        "timestamp": sensor_value['timestamp'],
-                        "value": value
-                    }
-                    self.client.publish(sen['topic'], json.dumps(data))
-                    try:
-                        sen['sensor'].values.pop(idx)
-                        self.project.store()
-                    except Exception as e:
-                        print e
+        if self.mqtt_connected:
+            for k, sen in self.sensors.items():
+                if len(sen['sensor'].values):
+                    for idx, sensor_value in enumerate(sen['sensor'].values):
+                        value = sensor_value['value']
+                        data = {
+                            "timestamp": sensor_value['timestamp'],
+                            "value": value
+                        }
+                        self.client.publish(sen['topic'], json.dumps(data))
+                        try:
+                            sen['sensor'].values.pop(idx)
+                            self.project.store()
+                        except Exception as e:
+                            print e
+        else:
+            raise IOError('Not connected to MQTT broker.')
 
     def bulkSend(self):
         """
 
 
         """
-        payload = {
-            'sensors':      {},
-            'actuators':    {},
-        }
-        for sensor_name in self.sensors:
-            values = {value['timestamp']: value['value'] for value in self.sensors[sensor_name]['sensor'].values}
-            payload['sensors'].update(
-                {
-                    sensor_name: values
-                }
-            )
-        response = requests.post(self.http_api_url, data=json.dumps(payload), headers=self.http_api_headers)
-        if response.status_code != 200:
-            print response.content
-            raise requests.HTTPError('Error sending data. Try again later.')
-        else:
+        if self.mqtt_connected:
+            payload = {
+                'sensors':      {},
+                'actuators':    {},
+            }
             for sensor_name in self.sensors:
-                self.sensors[sensor_name]['sensor'].values = []
+                values = {value['timestamp']: value['value'] for value in self.sensors[sensor_name]['sensor'].values}
+                payload['sensors'].update(
+                    {
+                        sensor_name: values
+                    }
+                )
+            response = requests.post(self.http_api_url, data=json.dumps(payload), headers=self.http_api_headers)
+            if response.status_code != 200:
+                print response.content
+                raise requests.HTTPError('Error sending data. Try again later.')
+            else:
+                for sensor_name in self.sensors:
+                    self.sensors[sensor_name]['sensor'].values = []
+        else:
+            raise IOError('Device is offline.')
 
 
     def debug(self):
