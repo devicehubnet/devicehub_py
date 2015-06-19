@@ -117,7 +117,7 @@ class Device(object):
 
         # Subscribing in on_connect() means that if we lose the connection and
         # reconnect then subscriptions will be renewed.
-        if not self.initial_connect:
+        if self.initial_connect:
             for k, sen in self.actuators.items():
                 self.client.subscribe(sen['topic'])
         self.initial_connect = True
