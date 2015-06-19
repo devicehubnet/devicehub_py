@@ -9,7 +9,7 @@ import requests
 
 
 class Project(object):
-    def __init__(self, project_id, persistent=False):
+    def __init__(self, project_id, persistent=True):
         """
 
         :param project_id:
@@ -149,8 +149,10 @@ class Device(object):
         :param userdata:
         :param rc:
         """
-        print("disconnected")
+        print("Disconnected. Going into offline mode.")
         self.mqtt_connected = False
+        self.project.persistent = True      # Set the project as persistent and save data to disk
+        self.project.store()
         client.connect()
 
     def getTopicRoot(self):
