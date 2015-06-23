@@ -26,11 +26,16 @@ class Project(object):
                 os.remove(self.filename + '.bak')
             except OSError as e:
                 if e.errno == 2:
-                    os.rename(self.filename, self.filename + '.bak')
-                    print e
+                    pass
                 else:
                     raise e
-
+            try:
+                os.rename(self.filename, self.filename + '.bak')
+            except OSError as e:
+                if e.errno == 2:
+                    pass
+                else:
+                    raise e
             # try:
             payload = {}
             for uuid, device in self.devices.items():
