@@ -220,7 +220,8 @@ class Device(object):
                         except Exception as e:
                             print e
         else:
-            raise IOError('Not connected to MQTT broker.')
+            print 'Not connected to MQTT broker.'
+            # raise IOError('Not connected to MQTT broker.')
 
     def bulkSend(self):
         """
@@ -247,7 +248,8 @@ class Device(object):
                 for sensor_name in self.sensors:
                     self.sensors[sensor_name]['sensor'].values = []
         else:
-            raise IOError('Device is offline.')
+            print 'Device is offline.'
+            # raise IOError('Device is offline.')
 
 
     def debug(self):
