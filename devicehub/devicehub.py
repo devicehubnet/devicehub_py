@@ -40,7 +40,7 @@ class Project(object):
             payload = {}
             for uuid, device in self.devices.items():
                 for sensor_name in device.sensors:
-                    print sensor_name
+                    # print sensor_name
                     payload.update(
                         {
                             device.device_uuid: {
