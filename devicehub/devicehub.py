@@ -2,6 +2,7 @@
 __author__ = 'Ionut Cotoi'
 import paho.mqtt.client as mqtt
 from time import sleep, time
+from datetime import datetime
 import json
 import pickle
 import os
@@ -19,6 +20,8 @@ class Project(object):
         self.devices = {}
         self.filename = 'proj_{0}_datastore.pkl'.format(str(project_id))
         self.persistent = persistent
+        if self.persistent:
+            self.load()
 
     def store(self):
         if self.persistent:
@@ -40,7 +43,6 @@ class Project(object):
             payload = {}
             for uuid, device in self.devices.items():
                 for sensor_name in device.sensors:
-                    print sensor_name
                     payload.update(
                         {
                             device.device_uuid: {
@@ -65,12 +67,12 @@ class Project(object):
                         except KeyError:
                             pass
             except Exception as e:
-                raise e
+                print e
         else:
-            raise AttributeError("Project's persistent flag is not set. Will not import.")
+            print "Project's persistent flag is not set. Will not import."
 
 class Device(object):
-    def __init__(self, project, device_uuid, api_key):
+    def __init__(self, project, device_uuid, api_key, debug_log=None):
         """
 
         :param project:
@@ -88,6 +90,8 @@ class Device(object):
 
         self.sensors = {}
         self.actuators = {}
+        self.logger = None
+        self.debug_log_file = debug_log
 
         self.http_api_url = 'https://api.devicehub.net/v2/project/' + str(self.project.project_id) + '/device/' + self.device_uuid + '/data'
         self.http_api_headers = {
@@ -101,11 +105,12 @@ class Device(object):
         self.client.on_message = self.on_message
         self.client.on_disconnect = self.on_disconnect
 
-        self.client.connect("mqtt.devicehub.net", 1883, 60)
+        self.client.connect("mqtt.devicehub.net", 1883, 10)
         self.client.loop_start()
 
         self.mqtt_connected = False
         self.initial_connect = False
+        self.logged_disconnect = False
 
     # The callback for when the client receives a CONNACK response from the server.
     def on_connect(self, client, userdata, flags, rc):
@@ -116,15 +121,22 @@ class Device(object):
         :param flags:
         :param rc:
         """
-        print("Connected with result code "+str(rc))
+        if self.initial_connect:
+            payload = "Reconnected to the MQTT server with result code " + str(rc) + ". Going into online mode."
+            for k, sen in self.actuators.items():
+                self.client.subscribe(sen['topic'])
+        else:
+            payload = "Connected to the MQTT server with result code " + str(rc)
+        print payload
+        if self.logger:
+            self.logger.addValue(payload)
+        if self.debug_log_file:
+            with open(self.debug_log_file, 'a') as f: f.write('\n' + str(datetime.now()) + ' - ' + payload)
         self.mqtt_connected = True
         self.bulkSend()
 
         # Subscribing in on_connect() means that if we lose the connection and
         # reconnect then subscriptions will be renewed.
-        if self.initial_connect:
-            for k, sen in self.actuators.items():
-                self.client.subscribe(sen['topic'])
         self.initial_connect = True
 
     def on_subscribe(self, client, userdata, mid, granted_qos):
@@ -135,7 +147,8 @@ class Device(object):
         :param mid:
         :param granted_qos:
         """
-        print("Subscribed to topic", client, userdata, mid, granted_qos)
+        # print("Subscribed to topic", client, userdata, mid, granted_qos)
+        pass
 
     # The callback for when a PUBLISH message is received from the server.
     def on_message(self, client, userdata, msg):
@@ -145,7 +158,12 @@ class Device(object):
         :param userdata:
         :param msg:
         """
-        print(msg.topic+" "+str(msg.payload))
+        payload = "Received message on " + msg.topic+" - "+str(msg.payload)
+        print payload
+        if self.logger:
+            self.logger.addValue(payload)
+        if self.debug_log_file:
+            with open(self.debug_log_file, 'a') as f: f.write('\n' + str(datetime.now()) + ' - ' + payload)
 
     def on_disconnect(self, client, userdata, rc):
         """
@@ -154,11 +172,19 @@ class Device(object):
         :param userdata:
         :param rc:
         """
-        print("Disconnected. Going into offline mode.")
+        payload = "Disconnected. Going into offline mode."
+        print payload
+        if self.logger:
+            self.logger.addValue("Disconnected. Going into offline mode.")
+        if self.debug_log_file:
+            with open(self.debug_log_file, 'a') as f: f.write('\n' + str(datetime.now()) + ' - ' + payload)
         self.mqtt_connected = False
         self.project.persistent = True      # Set the project as persistent and save data to disk
         self.project.store()
-        client.connect()
+        try:
+            client.connect("mqtt.devicehub.net", 1883, 10)
+        except:
+            pass
 
     def getTopicRoot(self):
         """
@@ -168,11 +194,20 @@ class Device(object):
         """
         return '/a/' + self.api_key + '/p/' + str(self.project.project_id) + '/d/' + self.device_uuid + '/'
 
-    def addSensor(self, sensor):
+    def addSensor(self, sensor, logger=False):
         """
 
         :param sensor:
+        :param logger:
         """
+        if logger:
+            if sensor.type == Sensor.STRING:
+                self.logger = sensor
+            else:
+                payload = "Error. '{0}' is not a string sensor and cannot be used for device logging.".format(sensor.name)
+                print payload
+                if self.debug_log_file:
+                    with open(self.debug_log_file, 'a') as f: f.write('\n' + str(datetime.now()) + ' - ' + payload)
         self.sensors[sensor.name] = {
             'sensor': sensor,
             'topic':  self.getTopicRoot() + 'sensor/' + sensor.name + '/data'
@@ -197,7 +232,8 @@ class Device(object):
         self.client.subscribe(self.actuators[actuator.name]['topic'])
 
         if callback is not None:
-            self.client.message_callback_add(self.actuators[actuator.name]['topic'], callback)
+            actuator.callback = callback
+        self.client.message_callback_add(self.actuators[actuator.name]['topic'], actuator.default_callback)
 
     def send(self):
         """
@@ -219,8 +255,20 @@ class Device(object):
                             self.project.store()
                         except Exception as e:
                             print e
+                            if self.debug_log_file:
+                                with open(self.debug_log_file, 'a') as f: f.write('\n' + str(datetime.now()) + ' - ' + e)
         else:
-            print 'Not connected to MQTT broker.'
+            if self.logger and not self.logged_disconnect:
+                self.logger.addValue('Tried to send data without being connected to MQTT server.')
+                self.logged_disconnect = True
+            payload = 'Not connected to MQTT broker.'
+            print payload
+            if self.debug_log_file:
+                with open(self.debug_log_file, 'a') as f: f.write('\n' + str(datetime.now()) + ' - ' + payload)
+            try:
+                self.client.connect("mqtt.devicehub.net", 1883, 10)
+            except:
+                pass
             # raise IOError('Not connected to MQTT broker.')
 
     def bulkSend(self):
@@ -242,13 +290,28 @@ class Device(object):
                 )
             response = requests.post(self.http_api_url, data=json.dumps(payload), headers=self.http_api_headers)
             if response.status_code != 200:
-                print response.content
-                raise requests.HTTPError('Error sending data. Try again later.')
+                payload = 'Error sending bulk data. Received request status code {0} with the following error message: {1}.'
+                payload = payload.format(str(response.status_code), response.content)
+                print payload
+                if self.logger:
+                    self.logger.addValue(payload)
+                if self.debug_log_file:
+                    with open(self.debug_log_file, 'a') as f: f.write('\n' + str(datetime.now()) + ' - ' + payload)
             else:
                 for sensor_name in self.sensors:
                     self.sensors[sensor_name]['sensor'].values = []
         else:
-            print 'Device is offline.'
+            payload = 'Device is offline. Cannot send bulk data.'
+            print payload
+            if self.logged_disconnect and not self.logged_disconnect:
+                self.logger.addValue(payload)
+                self.logged_disconnect = True
+            if self.debug_log_file:
+                with open(self.debug_log_file, 'a') as f: f.write('\n' + str(datetime.now()) + ' - ' + payload)
+            try:
+                self.client.connect("mqtt.devicehub.net", 1883, 10)
+            except:
+                pass
             # raise IOError('Device is offline.')
 
 
@@ -303,4 +366,22 @@ class Actuator(object):
         """
         self.type = actuator_type
         self.name = actuator_name
+        self.state = None
         self.device = None
+        self.callback = None
+
+    def default_callback(self, *args):
+        message = args[2].payload
+        try:
+            payload = json.loads(message)
+            self.state = payload['state']
+        except ValueError:
+            payload = 'Error decoding actuator payload: ' + message
+            print payload
+            if self.device.logger:
+                self.device.logger.addValue(payload)
+            if self.device.debug_log_file:
+                with open(self.device.debug_log_file, 'a') as f: f.write('\n' + str(datetime.now()) + ' - ' + payload)
+        if self.callback:
+            self.callback(payload)
+
