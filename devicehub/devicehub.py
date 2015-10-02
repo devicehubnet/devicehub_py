@@ -7,6 +7,7 @@ import json
 import pickle
 import os
 import requests
+from math import isinf, isnan
 
 
 class Project(object):
@@ -350,6 +351,11 @@ class Sensor(object):
 
     def addValue(self, value):
         # print(self.name, value)
+        if self.type in (self.ANALOG, self.DIGITAL) and (isinf(value) or isnan(value)):
+            print "Can't add value:", value
+            if self.device and self.device.logger:
+                self.device.logger.addValue("Sensor {0} tried to send illegal value: {1}".format(self.name, str(value)))
+            return None
         self.values.append(dict(timestamp=time(), value=value))
         self.device.project.store()
 
