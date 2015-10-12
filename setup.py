@@ -7,4 +7,6 @@ setup(name='devicehub',
       package_dir={'devicehub': 'devicehub'},
       packages=['devicehub'],
       install_requires=['httplib2', 'paho-mqtt', 'requests'],
+      url='https://devicehub.net',
+      maintainer='Cristian Gociu', maintainer_email='cristi@devicehub.net'
      )
