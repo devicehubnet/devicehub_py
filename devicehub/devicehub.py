@@ -11,13 +11,15 @@ from math import isinf, isnan
 
 
 class Project(object):
-    def __init__(self, project_id, persistent=True):
+    def __init__(self, project_id, persistent=True, api_root_uri="https://api.devicehub.net", mqtt_host="mqtt.devicehub.net"):
         """
 
         :param project_id:
         :param persistent:
         """
         self.project_id = project_id
+        self.project_api_root = api_root_uri
+        self.project_mqtt_host = mqtt_host
         self.devices = {}
         self.filename = 'proj_{0}_datastore.pkl'.format(str(project_id))
         self.persistent = persistent
@@ -72,6 +74,7 @@ class Project(object):
         else:
             print "Project's persistent flag is not set. Will not import."
 
+
 class Device(object):
     def __init__(self, project, device_uuid, api_key, debug_log=None):
         """
@@ -94,7 +97,7 @@ class Device(object):
         self.logger = None
         self.debug_log_file = debug_log
 
-        self.http_api_url = 'https://api.devicehub.net/v2/project/' + str(self.project.project_id) + '/device/' + self.device_uuid + '/data'
+        self.http_api_url = self.project.project_api_root + '/v2/project/' + str(self.project.project_id) + '/device/' + self.device_uuid + '/data'
         self.http_api_headers = {
             'Content-type': 'application/json',
             'X-ApiKey':     self.api_key
@@ -106,7 +109,7 @@ class Device(object):
         self.client.on_message = self.on_message
         self.client.on_disconnect = self.on_disconnect
 
-        self.client.connect("mqtt.devicehub.net", 1883, 10)
+        self.client.connect(self.project.project_mqtt_host, 1883, 10)
         self.client.loop_start()
 
         self.mqtt_connected = False
