@@ -128,11 +128,11 @@ class Device(object):
         :param rc:
         """
         if self.initial_connect:
-            payload = "Reconnected to the MQTT server with result code " + str(rc) + ". Going into online mode."
+            payload = "Reconnected to the MQTT broker with result code " + str(rc) + ". Going into online mode."
             for k, sen in self.actuators.items():
                 self.client.subscribe(sen['topic'])
         else:
-            payload = "Connected to the MQTT server with result code " + str(rc)
+            payload = "Connected to the MQTT broker with result code " + str(rc)
         print payload
         if self.logger:
             self.logger.addValue(payload)
@@ -271,9 +271,10 @@ class Device(object):
             payload = 'Not connected to MQTT broker.'
             print payload
             if self.debug_log_file:
-                with open(self.debug_log_file, 'a') as f: f.write('\n' + str(datetime.now()) + ' - ' + payload)
+                with open(self.debug_log_file, 'a') as f:
+                    f.write('\n' + str(datetime.now()) + ' - ' + payload)
             try:
-                self.client.connect("mqtt.devicehub.net", 1883, 10)
+                self.client.connect(self.project.project_mqtt_host, 1883, 10)
             except:
                 pass
             # raise IOError('Not connected to MQTT broker.')
