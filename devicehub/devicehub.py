@@ -321,7 +321,6 @@ class Device(object):
                 pass
             # raise IOError('Device is offline.')
 
-
     def debug(self):
         """
 
@@ -384,6 +383,7 @@ class Actuator(object):
 
     def default_callback(self, *args):
         message = args[2].payload
+        
         try:
             payload = json.loads(message)
             self.state = payload['state']
@@ -393,7 +393,21 @@ class Actuator(object):
             if self.device.logger:
                 self.device.logger.addValue(payload)
             if self.device.debug_log_file:
-                with open(self.device.debug_log_file, 'a') as f: f.write('\n' + str(datetime.now()) + ' - ' + payload)
+                with open(self.device.debug_log_file, 'a') as f:
+                    f.write('\n' + str(datetime.now()) + ' - ' + payload)
+
         if self.callback:
             self.callback(payload)
+
+    def set(self, state):
+        self.state = state
+
+        data = {
+            "timestamp": time(),
+            "state": self.state
+        }
+
+        topic = self.device.getTopicRoot() + 'actuator/' + self.name + '/state'
+
+        self.device.client.publish(topic, json.dumps(data))
 
