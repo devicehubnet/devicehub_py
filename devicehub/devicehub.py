@@ -11,7 +11,7 @@ from math import isinf, isnan
 
 
 class Project(object):
-    def __init__(self, project_id, persistent=True, api_root_uri="https://api.devicehub.net", mqtt_host="mqtt.devicehub.net"):
+    def __init__(self, project_id, persistent=True, api_root_uri="https://api.devicehub.net", mqtt_host="mqtt.devicehub.net", ssl_verify=True):
         """
 
         :param project_id:
@@ -20,6 +20,7 @@ class Project(object):
         self.project_id = project_id
         self.project_api_root = api_root_uri
         self.project_mqtt_host = mqtt_host
+        self.ssl_verify = ssl_verify
         self.devices = {}
         self.filename = 'proj_{0}_datastore.pkl'.format(str(project_id))
         self.persistent = persistent
@@ -102,6 +103,7 @@ class Device(object):
             'Content-type': 'application/json',
             'X-ApiKey':     self.api_key
         }
+        self.ssl_verify = self.project.ssl_verify
 
         self.client = mqtt.Client()
         self.client.on_connect = self.on_connect
@@ -137,7 +139,8 @@ class Device(object):
         if self.debug_log_file:
             with open(self.debug_log_file, 'a') as f: f.write('\n' + str(datetime.now()) + ' - ' + payload)
         self.mqtt_connected = True
-        self.bulkSend()
+        if self.logger or self.project.persistent:
+            self.bulkSend()
 
         # Subscribing in on_connect() means that if we lose the connection and
         # reconnect then subscriptions will be renewed.
@@ -292,7 +295,7 @@ class Device(object):
                         sensor_name: values
                     }
                 )
-            response = requests.post(self.http_api_url, data=json.dumps(payload), headers=self.http_api_headers)
+            response = requests.post(self.http_api_url, data=json.dumps(payload), headers=self.http_api_headers, verify=self.ssl_verify)
             if response.status_code != 200:
                 payload = 'Error sending bulk data. Received request status code {0} with the following error message: {1}.'
                 payload = payload.format(str(response.status_code), response.content)
