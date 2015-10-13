@@ -139,7 +139,8 @@ class Device(object):
         if self.debug_log_file:
             with open(self.debug_log_file, 'a') as f: f.write('\n' + str(datetime.now()) + ' - ' + payload)
         self.mqtt_connected = True
-        self.bulkSend()
+        if self.logger or self.project.persistent:
+            self.bulkSend()
 
         # Subscribing in on_connect() means that if we lose the connection and
         # reconnect then subscriptions will be renewed.
