@@ -1,17 +1,25 @@
 #!/usr/bin/python
-__author__ = 'Ionut Cotoi'
 import paho.mqtt.client as mqtt
 from time import sleep, time
 from datetime import datetime
 import json
 import pickle
 import os
-import requests
+import urllib3
 from math import isinf, isnan
+
+urllib3.disable_warnings()
+
+http = urllib3.PoolManager()
 
 
 class Project(object):
-    def __init__(self, project_id, persistent=True, api_root_uri="https://api.devicehub.net", mqtt_host="mqtt.devicehub.net", ssl_verify=True):
+    def __init__(self,
+                 project_id,
+                 persistent=True,
+                 api_root_uri="https://api.devicehub.net",
+                 mqtt_host="mqtt.devicehub.net",
+                 ssl_verify=True):
         """
 
         :param project_id:
@@ -98,10 +106,11 @@ class Device(object):
         self.logger = None
         self.debug_log_file = debug_log
 
-        self.http_api_url = self.project.project_api_root + '/v2/project/' + str(self.project.project_id) + '/device/' + self.device_uuid + '/data'
+        self.http_api_url = self.project.project_api_root + '/v2/project/' + str(
+            self.project.project_id) + '/device/' + self.device_uuid + '/data'
         self.http_api_headers = {
             'Content-type': 'application/json',
-            'X-ApiKey':     self.api_key
+            'X-ApiKey': self.api_key
         }
         self.ssl_verify = self.project.ssl_verify
 
@@ -127,13 +136,14 @@ class Device(object):
         :param flags:
         :param rc:
         """
-        if self.initial_connect:
-            payload = "Reconnected to the MQTT broker with result code " + str(rc) + ". Going into online mode."
-            for k, sen in self.actuators.items():
-                self.client.subscribe(sen['topic'])
-        else:
-            payload = "Connected to the MQTT broker with result code " + str(rc)
+        # if self.initial_connect:
+        #     payload = "Reconnected to the MQTT broker with result code " + str(rc) + ". Going into online mode."
+        #     for k, sen in self.actuators.items():
+        #         self.client.subscribe(sen['topic'])
+        # else:
+        payload = "Connected to the MQTT broker with result code " + str(rc)
         print payload
+
         if self.logger:
             self.logger.addValue(payload)
         if self.debug_log_file:
@@ -165,7 +175,7 @@ class Device(object):
         :param userdata:
         :param msg:
         """
-        payload = "Received message on " + msg.topic+" - "+str(msg.payload)
+        payload = "Received message on " + msg.topic + " - " + str(msg.payload)
         print payload
         if self.logger:
             self.logger.addValue(payload)
@@ -229,7 +239,7 @@ class Device(object):
         """
         self.actuators[actuator.name] = {
             'actuator': actuator,
-            'topic':    self.getTopicRoot() + 'actuator/' + actuator.name + '/state'
+            'topic': self.getTopicRoot() + 'actuator/' + actuator.name + '/state'
         }
         actuator.device = self
 
@@ -277,7 +287,7 @@ class Device(object):
                 self.client.connect(self.project.project_mqtt_host, 1883, 10)
             except:
                 pass
-            # raise IOError('Not connected to MQTT broker.')
+                # raise IOError('Not connected to MQTT broker.')
 
     def bulkSend(self):
         """
@@ -286,41 +296,54 @@ class Device(object):
         """
         if self.mqtt_connected:
             payload = {
-                'sensors':      {},
-                'actuators':    {},
+                'sensors': {},
+                'actuators': {},
             }
-            for sensor_name in self.sensors:
-                values = {value['timestamp']: value['value'] for value in self.sensors[sensor_name]['sensor'].values}
-                payload['sensors'].update(
-                    {
-                        sensor_name: values
-                    }
-                )
-            response = requests.post(self.http_api_url, data=json.dumps(payload), headers=self.http_api_headers, verify=self.ssl_verify)
-            if response.status_code != 200:
-                payload = 'Error sending bulk data. Received request status code {0} with the following error message: {1}.'
-                payload = payload.format(str(response.status_code), response.content)
-                print payload
-                if self.logger:
-                    self.logger.addValue(payload)
-                if self.debug_log_file:
-                    with open(self.debug_log_file, 'a') as f: f.write('\n' + str(datetime.now()) + ' - ' + payload)
-            else:
+            try:
                 for sensor_name in self.sensors:
-                    self.sensors[sensor_name]['sensor'].values = []
+                    values = {
+                        value['timestamp']: value['value'] for value in self.sensors[sensor_name]['sensor'].values
+                        }
+
+                    payload['sensors'].update(
+                        {
+                            sensor_name: values
+                        }
+                    )
+
+                response = http.urlopen('POST',
+                                        self.http_api_url,
+                                        body=json.dumps(payload),
+                                        headers=self.http_api_headers)
+
+                if response.status != 200:
+                    payload = 'Error sending bulk data. Received request status code {0} with the following error message: {1}.'
+                    payload = payload.format(str(response.status), response.data)
+                    print payload
+                    if self.logger:
+                        self.logger.addValue(payload)
+                    if self.debug_log_file:
+                        with open(self.debug_log_file, 'a') as f: f.write('\n' + str(datetime.now()) + ' - ' + payload)
+                else:
+                    for sensor_name in self.sensors:
+                        self.sensors[sensor_name]['sensor'].values = []
+            except Exception as e:
+                print "DeviceHub library exception:", e
         else:
             payload = 'Device is offline. Cannot send bulk data.'
             print payload
+
             if self.logged_disconnect and not self.logged_disconnect:
                 self.logger.addValue(payload)
                 self.logged_disconnect = True
+
             if self.debug_log_file:
                 with open(self.debug_log_file, 'a') as f: f.write('\n' + str(datetime.now()) + ' - ' + payload)
             try:
-                self.client.connect("mqtt.devicehub.net", 1883, 10)
-            except:
+                self.client.connect(self.project.project_mqtt_host, 1883, 10)
+            except Exception as e:
                 pass
-            # raise IOError('Device is offline.')
+                # raise IOError('Device is offline.')
 
     def debug(self):
         """
@@ -329,14 +352,15 @@ class Device(object):
         """
         print "\nSensors:"
         for k, sen in self.sensors.items():
-            print (k)
-            print (sen['topic'])
+            print(k)
+            print(sen['topic'])
 
         print "\nActuators:"
         for k, act in self.actuators.items():
-            print (k)
-            print (act['topic'])
-        print ""
+            print(k)
+            print(act['topic'])
+        print
+        ""
 
 
 class Sensor(object):
@@ -384,13 +408,12 @@ class Actuator(object):
 
     def default_callback(self, *args):
         message = args[2].payload
-        
+
         try:
             payload = json.loads(message)
             self.state = payload['state']
         except ValueError:
             payload = 'Error decoding actuator payload: ' + message
-            print payload
             if self.device.logger:
                 self.device.logger.addValue(payload)
             if self.device.debug_log_file:
@@ -411,4 +434,3 @@ class Actuator(object):
         topic = self.device.getTopicRoot() + 'actuator/' + self.name + '/state'
 
         self.device.client.publish(topic, json.dumps(data))
-

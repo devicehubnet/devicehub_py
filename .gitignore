@@ -52,3 +52,9 @@ docs/_build/
 
 # PyBuilder
 target/
+.idea/devicehub_py.iml
+.idea/encodings.xml
+.idea/misc.xml
+.idea/modules.xml
+.idea/vcs.xml
+.idea/workspace.xml
