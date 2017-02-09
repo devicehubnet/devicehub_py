@@ -79,9 +79,9 @@ class Project(object):
                         except KeyError:
                             pass
             except Exception as e:
-                print e
+                print(e)
         else:
-            print "Project's persistent flag is not set. Will not import."
+            print("Project's persistent flag is not set. Will not import.")
 
 
 class Device(object):
@@ -142,7 +142,7 @@ class Device(object):
         #         self.client.subscribe(sen['topic'])
         # else:
         payload = "Connected to the MQTT broker with result code " + str(rc)
-        print payload
+        print(payload)
 
         if self.logger:
             self.logger.addValue(payload)
@@ -176,7 +176,7 @@ class Device(object):
         :param msg:
         """
         payload = "Received message on " + msg.topic + " - " + str(msg.payload)
-        print payload
+        print(payload)
         if self.logger:
             self.logger.addValue(payload)
         if self.debug_log_file:
@@ -190,7 +190,7 @@ class Device(object):
         :param rc:
         """
         payload = "Disconnected. Going into offline mode."
-        print payload
+        print(payload)
         if self.logger:
             self.logger.addValue("Disconnected. Going into offline mode.")
         if self.debug_log_file:
@@ -222,7 +222,7 @@ class Device(object):
                 self.logger = sensor
             else:
                 payload = "Error. '{0}' is not a string sensor and cannot be used for device logging.".format(sensor.name)
-                print payload
+                print(payload)
                 if self.debug_log_file:
                     with open(self.debug_log_file, 'a') as f: f.write('\n' + str(datetime.now()) + ' - ' + payload)
         self.sensors[sensor.name] = {
@@ -271,7 +271,7 @@ class Device(object):
                             sen['sensor'].values.pop(idx)
                             self.project.store()
                         except Exception as e:
-                            print e
+                            print(e)
                             if self.debug_log_file:
                                 with open(self.debug_log_file, 'a') as f: f.write('\n' + str(datetime.now()) + ' - ' + e)
         else:
@@ -279,7 +279,7 @@ class Device(object):
                 self.logger.addValue('Tried to send data without being connected to MQTT server.')
                 self.logged_disconnect = True
             payload = 'Not connected to MQTT broker.'
-            print payload
+            print(payload)
             if self.debug_log_file:
                 with open(self.debug_log_file, 'a') as f:
                     f.write('\n' + str(datetime.now()) + ' - ' + payload)
@@ -319,7 +319,7 @@ class Device(object):
                 if response.status != 200:
                     payload = 'Error sending bulk data. Received request status code {0} with the following error message: {1}.'
                     payload = payload.format(str(response.status), response.data)
-                    print payload
+                    print(payload)
                     if self.logger:
                         self.logger.addValue(payload)
                     if self.debug_log_file:
@@ -328,10 +328,10 @@ class Device(object):
                     for sensor_name in self.sensors:
                         self.sensors[sensor_name]['sensor'].values = []
             except Exception as e:
-                print "DeviceHub library exception:", e
+                print("DeviceHub library exception:", e)
         else:
             payload = 'Device is offline. Cannot send bulk data.'
-            print payload
+            print(payload)
 
             if self.logged_disconnect and not self.logged_disconnect:
                 self.logger.addValue(payload)
@@ -350,16 +350,16 @@ class Device(object):
 
 
         """
-        print "\nSensors:"
+        print("\nSensors:")
         for k, sen in self.sensors.items():
             print(k)
             print(sen['topic'])
 
-        print "\nActuators:"
+        print("\nActuators:")
         for k, act in self.actuators.items():
             print(k)
             print(act['topic'])
-        print
+        print()
         ""
 
 
@@ -382,7 +382,7 @@ class Sensor(object):
     def addValue(self, value):
         # print(self.name, value)
         if self.type in (self.ANALOG, self.DIGITAL) and (isinf(value) or isnan(value)):
-            print "Can't add value:", value
+            print("Can't add value:", value)
             if self.device and self.device.logger:
                 self.device.logger.addValue("Sensor {0} tried to send illegal value: {1}".format(self.name, str(value)))
             return None
