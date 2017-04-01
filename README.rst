@@ -1,4 +1,4 @@
-Python API wrapper for devicehub v1 REST & MQTT APIs
+Python API wrapper for devicehub v2 REST & MQTT APIs
 
 Documentation
 =============
